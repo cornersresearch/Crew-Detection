@@ -1,0 +1,220 @@
+---
+title: "MasterDatabase2"
+author: "Akshay Jain"
+date: "6/25/2019"
+output: pdf_document
+---
+```{r}
+library(fuzzyjoin)
+library(lubridate)
+library(dplyr)
+```
+
+#This is to create the master database using spreadsheets formed based off of the different race of the officers
+#Import race spreadsheets and join them together 
+```{r}
+whites <- read.csv("../Datasets/Original Data/Complaint Subsets/WhiteOfficers.csv") %>% mutate(officerRace = "White")
+blacks <- read.csv("../Datasets/Original Data/Complaint Subsets/BlackOfficers.csv") %>% mutate(officerRace = "Black")
+hispanic <- read.csv("../Datasets/Original Data/Complaint Subsets/HispanicOfficers.csv") %>% mutate(officerRace = "Hispanic")
+other <- read.csv("../Datasets/Original Data/Complaint Subsets/OtherRaceOfficers.csv") %>% mutate(officerRace = "Other")
+
+MasterDatabase <-whites %>% rbind(blacks) %>% rbind(hispanic) %>% rbind(other) %>% rename(UID = OfficerID)
+```
+
+#Create officer field and a date field.
+```{r}
+MasterDatabase$officer <- paste(MasterDatabase$OfficeFirst, MasterDatabase$OfficerLast)
+MasterDatabase$Date <- ymd_hms(MasterDatabase$IncidentDate)
+```
+
+#Create field for whether complaints are departmental or civilian issued
+```{r}
+officer <- read.csv("../Datasets/Original Data/Complaint Subsets/Officer Filed Complaints.csv")
+civilian <- read.csv("../Datasets/Original Data/Complaint Subsets/CivilianFiledComplaints.csv")
+
+MasterDatabase$Filedby <- ifelse(MasterDatabase$CRID %in% officer$CRID, "Officer Filed", ifelse(MasterDatabase$CRID %in% civilian$CRID, "Civilian Filed", "Unknown"))
+```
+
+#Fix up Roster Data
+```{r}
+proper=function(x) paste0(toupper(substr(x, 1, 1)), tolower(substring(x, 2)))
+
+rosterNew <- read.csv("../Datasets/Original Data/Other_Raw_Data/roster__2018-03.csv")
+rosterOld <- read.csv("../Datasets/Original Data/Other_Raw_Data/roster_1936-2017_2017-04.csv")
+
+library(plyr)
+megaRoster <- rbind.fill(rosterOld, rosterNew)  %>% distinct()
+megaRoster <- megaRoster %>% filter(link_UID != -999) %>% arrange(link_UID)
+detach(package:plyr)
+
+library(dplyr)
+
+megaRoster$UID <- ifelse(is.na(megaRoster$old_UID), megaRoster$link_UID, megaRoster$old_UID)
+megaRoster$officer <- paste(proper(megaRoster$first_name), proper(megaRoster$last_name))
+megaRoster <- megaRoster %>% select(officer, UID, middle_initial, gender, race, current_age, current_status, current_rank, appointed_date, resignation_date)
+megaRoster <- megaRoster %>% distinct(UID, .keep_all = TRUE)
+
+megaRoster %>% 
+  mutate(startYear = ifelse(year(mdy(appointed_date)) >2020,year(mdy(appointed_date))-100, year(mdy(appointed_date))))%>%
+  mutate(startYear = ifelse(is.na(startYear),  ifelse(year(ymd(appointed_date)) >2020,year(ymd(appointed_date))-100, year(ymd(appointed_date))),startYear)) %>% 
+  mutate(resignation_date = ifelse(resignation_date =="", "01/01/2018", resignation_date)) %>% 
+  mutate(endYear = ifelse(year(mdy(resignation_date)) >2020,year(mdy(resignation_date))-100, year(mdy(resignation_date)))) %>% 
+  filter(!is.na(endYear))
+endYears <- roster %>% filter(is.na(endYear)) %>% mutate(endYear = year(ymd(resignation_date)))
+megaRoster <- megaRoster %>% 
+  rbind(endYears) %>% 
+  mutate(yearsOnForce = endYear - startYear) %>% 
+  mutate(resignation_date = ifelse(resignation_date == "01/01/2018", NA, resignation_date)) %>% 
+  mutate(endYear = ifelse(is.na(resignation_date), NA, endYear))
+```
+
+
+#This is a dataset of each officer and their UID
+```{r}
+officers<- MasterDatabase %>% select(officer, UID) %>% distinct()
+megaRosterCopy <- megaRoster 
+megaRosterCopy$UID <- megaRosterCopy$UID
+megaRosterCopy <- megaRosterCopy %>% select(officer, UID) %>% distinct()
+
+officers <- officers %>% rbind(megaRosterCopy) %>% distinct()
+officers
+```
+
+#This cleans up unit history data
+```{r}
+unit_history <- read.csv("../Datasets/Original Data/Other_Raw_Data/unit-history.csv", stringsAsFactors = FALSE)
+unit_history$officer <- officers$officer[match(unit_history$link_UID, officers$UID)]
+
+unit_history$unit_start_date <- mdy(unit_history$unit_start_date)
+unit_history$unit_end_date <- mdy(unit_history$unit_end_date)
+unit_history$start_month <- month(unit_history$unit_start_date)
+unit_history$start_day <- day(unit_history$unit_start_date)
+unit_history$start_year <- year(unit_history$unit_start_date)
+unit_history$start_year<- ifelse(unit_history$start_year>2019, unit_history$start_year-100, unit_history$start_year)
+unit_history$start_date <- mdy(paste0(unit_history$start_month,"-", unit_history$start_day,"-", unit_history$start_year))
+
+unit_history$end_month <- month(unit_history$unit_end_date)
+unit_history$end_day <- day(unit_history$unit_end_date)
+unit_history$end_year <- year(unit_history$unit_end_date)
+unit_history$end_year<- ifelse(unit_history$end_year>2019, unit_history$end_year-100, unit_history$end_year)
+unit_history$end_date <- mdy(paste0(unit_history$end_month,"-", unit_history$end_day,"-", unit_history$end_year))
+
+unit_history <- unit_history %>% 
+  select(officer, unit, link_UID, start_date, end_date) %>% 
+  rename(UID = link_UID)
+```
+
+#This is the process that joins unit history and complaints.
+```{r}
+#Add unit assignments for all officers
+FullData <- MasterDatabase %>% mutate(unit = 1) %>% filter(unit == -1) #Creates an empty dataframe with the correct columns
+UIDS <- MasterDatabase %>% select(UID) %>% distinct() %>% arrange(UID) %>% pull(UID)
+for(j in 1:length(UIDS)){
+    i = UIDS[j]
+    subsettedData <- MasterDatabase %>% filter(UID ==i)
+    subsettedUnits <- unit_history %>% filter(UID == i )
+    eachOfficer<- fuzzy_left_join(
+     subsettedData, subsettedUnits,
+      by = c(
+        "UID"= "UID",
+        "Date" = "start_date",
+        "Date" = "end_date"
+        ),
+      match_fun = list(`==`, `>=`, `<=`)
+      ) %>% select(-c(start_date, end_date))
+    eachOfficer <- data.frame(eachOfficer)
+    FullData <- FullData %>% rbind(eachOfficer)
+    svMisc::progress(j,length(UIDS))
+}
+FullData
+
+FullData$year <- year(FullData$Date)
+```
+
+#Get rid of the "C" that precedes some complaints
+```{r}
+Cs <- as.character((FullData %>% filter(grepl("C", CRID)))$CRID)
+
+for(i in 1:length(Cs))
+  Cs[i] = substr(Cs[i],2,10)
+
+notCs <- as.character((FullData %>% filter(!grepl("C", CRID)))$CRID)
+numericDups <- intersect(notCs, Cs)
+
+cDups <- numericDups
+for(i in 1:length(cDups))
+{
+  cDups[i] = paste0("C",cDups[i])
+}
+
+FullData <- FullData %>% filter(!CRID %in% cDups)
+FullData$CRID <- as.character(FullData$CRID)
+
+FullData <- FullData %>% mutate(CRID = ifelse(grepl("C", CRID), gsub("C", "", CRID), CRID))
+```
+
+
+#Adding field for complaints that involved officers in different units
+```{r}
+crossUnits <- FullData %>% 
+  filter(!is.na(unit)) %>% 
+  group_by(CRID) %>% 
+  summarize(Result=n_distinct(unit)) %>% 
+  filter(Result>1) %>% 
+  pull(CRID)
+
+FullData <- FullData %>% 
+  mutate(crossUnit = ifelse(CRID %in% crossUnits, "Yes", "No"))
+```
+
+#Clean up some of the fields that were messed up from the previous steps
+```{r}
+FullData <- FullData %>% 
+  rename(UID = UID.x) %>% 
+  rename(officer = officer.x) %>% 
+  select(-c(officer.y,UID.y))
+```
+
+#Obtain dataset of each complaint and how many officers were listed on a complaint
+```{r}
+offPerComp <- FullData %>% 
+  count(CRID) %>% 
+  as.data.frame() %>% 
+  rename(no_of_officers = n)
+```
+
+#Obtain filtered master database that has only officers who have received more than one complaint. This will be used for network creation.
+```{r}
+md_moreThanOne <- FullData %>% 
+  group_by(UID) %>% 
+  filter(n()>1)
+```
+
+#Fix up settlement data so that UID is the correct UID that we've been using. 
+#It looks like the current UID field matches up with the unit history UID field, so we join them and then rename fields. 
+```{r}
+uh <- read.csv("../Datasets/Original Data/Other_Raw_Data/unit-history.csv", stringsAsFactors = FALSE)
+settlements <- read.csv("../Datasets/Original Data/settlements_1952-2016_2017-01.csv") %>% 
+  mutate(year = as.numeric(substring(as.character(incident_date),1,4))) %>% filter(year>1989) %>% 
+  left_join(uh, by = "UID") %>% 
+  mutate(settlement = as.character(settlement)) %>%
+  mutate(settlement = substr(settlement,2,nchar(settlement))) %>% 
+  mutate(settlement = gsub(",", "",settlement)) %>%
+  mutate(settlement = as.numeric(settlement)) %>% 
+  select(-UID) %>% 
+  rename(UID = link_UID) %>%
+  left_join(officers, by = "UID") %>% 
+  select(case_id, UID, officer, complaint, incident_date, location, plantiff, settlement, service_length, year) %>% 
+  distinct() %>% 
+  rename(plaintiff = plantiff) 
+```
+
+#Export all Data
+```{r}
+write.csv(FullData, "../Datasets/Complaint_Dataset.csv")
+write.csv(megaRoster, "../Datasets/Final_Roster.csv")
+write.csv(unit_history, "../Datasets/Final_Unit_History.csv")
+write.csv(md_moreThanOne, "../Datasets/Complaints_MoreThanOneComplaint.csv")
+write.csv(offPerComp, "../Datasets/OfficersPerComplaint.csv")
+write.csv(settlements, "../Datasets/Settlements.csv")
+```

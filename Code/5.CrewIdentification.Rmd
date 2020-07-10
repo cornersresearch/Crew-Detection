@@ -1,0 +1,179 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(cluster)
+library(janitor)
+library(readxl)
+```
+
+#This code reads in the community assignments and node attributes. It first joins them together. Once it does that, it filters down to the nodes who are in the most common lab prop group of the louvain group. 
+
+```{r}
+complaints <- read.csv("../Datasets/Complaint_Dataset.csv")
+
+commAssignments <- read.csv("../Datasets/Officer_Community_Assignments.csv", stringsAsFactors = FALSE) %>% 
+  mutate(Label_Propagation=as.integer(Label_Propagation))%>%
+  mutate(Community_ID=as.integer(Community_ID))
+  
+getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+nodeAttributes = read.csv("../Datasets/NodeDegrees.csv") %>% select(-X)
+
+allOfficers = nodeAttributes %>% left_join(commAssignments, by = "UID")
+```
+
+#The next thing we want to do is group by the communities and summarize important information
+
+```{r}
+getWithinEdges <- function(comm, df){
+  uids <- allOfficers %>% filter(Community_ID==comm) %>% pull(UID)
+  number <- df %>% filter(UID %in% uids) %>% count(CRID) %>% filter(n>1) %>% nrow()
+  return(number)
+}
+```
+
+#Create the main community dataset
+```{r}
+d0 <- allOfficers %>% 
+  select(Degree, Weighted.Degree, yearsOnForce, current_age, Community_ID) %>% 
+  group_by(Community_ID) %>% 
+  summarize_all("mean", na.rm= TRUE)
+d1 <- allOfficers %>% 
+  select(race,gender,Community_ID) %>% 
+  group_by(Community_ID) %>% 
+  summarize(percentBlack = 100*sum(race=="BLACK")/n(),
+            percentWhite = 100*sum(race=="WHITE")/n(),
+            percentMale = 100*sum(gender=="MALE")/n(),
+            percentFemale = 100*sum(gender=="FEMALE")/n()
+            )
+d2 <- allOfficers %>% count(Community_ID) %>% rename(Count = n)
+communities <- d2 %>% left_join(d0) %>% left_join(d1)
+
+communities<- communities %>% 
+  group_by(Community_ID) %>% 
+  mutate(WithinCommunityComplaints = getWithinEdges(Community_ID, complaints)) %>% 
+  mutate(internalComplaintsPerPerson = WithinCommunityComplaints/Count)
+
+ communities
+```
+
+#Add fields for Jaccard Indices with other detection methods
+```{r}
+jaccardSim <- function(list1, list2){
+  intersection <- length(intersect(list1,list2))
+  union <- length(list1)+length(list2)-intersection
+  return(intersection/union)
+}
+
+jaccard <- function(group_id){
+  #Take in the group_id which is Louvain.
+  df_temp <- allOfficers %>% filter(Community_ID==group_id)
+  lpUIDS <- allOfficers %>% filter(Label_Propagation==getmode(df_temp$Label_Propagation)) %>% pull(UID)
+  louvainUIDS <- allOfficers %>% filter(Community_ID==getmode(df_temp$Community_ID)) %>% pull(UID)
+  return(jaccardSim(lpUIDS, louvainUIDS))
+}
+commsAggregated <- allOfficers %>% 
+  group_by(Community_ID) %>% 
+  summarize(
+    jaccardLabProp = jaccard(Community_ID))
+
+communities <- communities %>% left_join(commsAggregated)
+```
+
+```{r}
+categories <- read.csv("../Datasets/CommunitiesPercentFlagged.csv") %>% select(-X)
+communities <-communities%>% left_join(categories, by = "Community_ID")
+```
+
+
+## Now we need to identify which of these communities are likely crews.
+
+```{r}
+#This defines a crew as a group of at least 3 officers, and then constructs an index using features that correspond to crew likelihood (which are appropriately scaled)
+
+zerotoone<- function(col){
+  min <- min(col, na.rm = TRUE)
+  range <- max(col, na.rm = TRUE)-min
+  return((col-min)/range)
+}
+
+crewFactors <- communities %>% 
+  ungroup() %>% 
+  filter(Count>2) %>% 
+  select(Weighted.Degree, WithinCommunityComplaints, internalComplaintsPerPerson, jaccardLabProp, percentFlagged) %>% 
+  scale() %>% 
+  as.data.frame()
+
+crewFactors <-cbind(crewFactors, Index_Value = zerotoone(scale(rowSums(crewFactors))))
+
+crewFactors <- communities  %>% 
+  filter(Count>2) %>%
+  select(Community_ID) %>% 
+  cbind(crewFactors) %>% 
+  filter(!is.na(Index_Value))
+
+comms <- communities %>% 
+  left_join(crewFactors %>% select(Community_ID, Index_Value)) %>% 
+  ungroup() %>% 
+  arrange(-Index_Value)
+comms[is.na(comms)]<-0
+
+comms <- comms %>% 
+  mutate(DetectedCrew = ifelse(Index_Value>=0.5, "Yes", "No"))
+
+
+```
+
+
+```{r}
+dens <- density(crewFactors$Index_Value)
+
+data <- tibble(x = dens$x, y = dens$y) %>% 
+    mutate(variable = case_when(
+      (x >= .5) ~ "On",
+      (x <= .5) ~ "Off",
+      TRUE ~ NA_character_))
+
+ggplot(data, aes(x, y)) + geom_line() +
+  geom_area(data = filter(data, variable == 'On'), fill = 'red') + 
+  geom_area(data = filter(data, variable == 'Off'), fill = 'light grey') +
+  geom_vline(aes(xintercept=0.5), color="blue", linetype="dashed", size=1) +
+  xlim(c(0,1))+
+  theme_bw() + 
+  ggtitle("Generated Crew Probabilities For Communities >2") + 
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab("Probability Value") + 
+  ylab("Density")
+
+# We matched the detected skullcrap crew and Watts crew
+# 1156 officers are in crews (3.432508%) of all the officers in the roster+complaint datasets
+```
+
+```{r}
+settlementsPerOfficer <- read.csv("../Datasets/Settlements.csv") %>% group_by(UID) %>% summarize(totalSettlements = n()) %>% ungroup()
+
+settlementsPerComm <- commAssignments %>% 
+  select(UID, Community_ID) %>% 
+  filter(!is.na(Community_ID)) %>% 
+  left_join(settlementsPerOfficer, by = "UID") %>%
+  mutate(totalSettlements = ifelse(is.na(totalSettlements), 0, totalSettlements)) %>% 
+  group_by(Community_ID) %>% 
+  summarize(totalSettlements = sum(totalSettlements))
+
+comms <- comms %>% left_join(settlementsPerComm, by = "Community_ID")
+
+```
+
+```{r}
+comms %>% write.csv("../Datasets/AttributesByCommunity.csv")
+```
+
+

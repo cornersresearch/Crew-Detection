@@ -1,0 +1,181 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(dplyr)
+library(cluster)
+library(ggplot2)
+library(purrr)
+library(factoextra)
+```
+
+```{r}
+roster <- read.csv("../Datasets/Final_Roster.csv", stringsAsFactors = FALSE)
+complaints <- read.csv("../Datasets/Complaint_Dataset.csv", stringsAsFactors = FALSE)
+```
+
+```{r}
+officers <- complaints %>% 
+  select(officer, UID) %>% 
+  group_by(officer, UID) %>% 
+  summarize(allegations = n()) %>% 
+  ungroup()
+
+otherOfficers <- roster %>% 
+  select(officer, UID) %>% 
+  mutate(allegations = 0) %>% 
+  filter(!(UID %in%officers$UID))
+
+officers <- officers %>% rbind(otherOfficers)
+
+soloComplaints <- complaints %>% 
+  group_by(CRID) %>% 
+  filter(n()==1) %>% 
+  ungroup() %>% 
+  group_by(UID) %>% 
+  summarize(soloAllegations = n()) %>% 
+  ungroup()
+
+aggressive_complaints <-  complaints %>% 
+  filter(Category %in% c('Use Of Force', "Illegal Search", "False Arrest", "Criminal Misconduct", "Excessive Force")) %>% 
+  group_by(UID) %>% 
+  summarize(aggressiveAllegations = n()) %>% 
+  ungroup()
+  
+invcor_complaints <- complaints %>% 
+  filter(Category %in% c('Bribery / Official Corruption','Money / Property'))%>% 
+  group_by(UID) %>% 
+  summarize(invcor_Allegations = n()) %>% 
+  ungroup()
+
+biasprejudice_complaints <- complaints %>% 
+  filter(Category %in% c('Racial Profiling','Verbal Abuse','First Amendment')) %>% 
+  group_by(UID) %>% 
+  summarize(biasprejudice_Allegations = n()) %>% 
+  ungroup()
+
+policy_complaints <- complaints %>% 
+  filter(Category %in% c('Operation/Personnel Violations','Lockup Procedures','Supervisory Responsibilities','Traffic','Medical')) %>% 
+  group_by(UID) %>% 
+  summarize(policy_Allegations = n()) %>% 
+  ungroup()
+  
+offduty_complaints <- complaints %>% 
+  filter(Category %in% c('Drug / Alcohol Abuse', 'Domestic','Conduct Unbecoming (Off-Duty)')) %>% 
+  group_by(UID) %>% 
+  summarize(offduty_Allegations = n()) %>% 
+  ungroup()
+
+sustained_complaints <- complaints %>% 
+  filter(Finding =="Sustained") %>% 
+  group_by(UID) %>% 
+  summarize(sustained_Allegations = n()) %>% 
+  ungroup()
+
+clean_complaints <- complaints %>% 
+  filter(Finding %in% c("Unfounded", "Exonerated")) %>% 
+  group_by(UID) %>% 
+  summarize(clean_Allegations = n()) %>% 
+  ungroup()
+
+  
+officers <- officers %>% 
+  left_join(soloComplaints, by = "UID")%>% 
+  left_join(aggressive_complaints, by = "UID")%>% 
+  left_join(invcor_complaints, by = "UID")%>% 
+  left_join(biasprejudice_complaints, by = "UID")%>% 
+  left_join(policy_complaints, by = "UID")%>% 
+  left_join(offduty_complaints, by = "UID") %>% 
+  left_join(sustained_complaints, by = "UID")%>% 
+  left_join(clean_complaints, by = "UID")
+officers[is.na(officers)] <- 0
+  
+```
+
+```{r}
+officers[is.na(officers)] <- 0
+  
+officers
+```
+
+
+```{r}
+percentages <- officers %>% 
+  mutate(percentAlone = soloAllegations/allegations,
+         percentSus = sustained_Allegations/allegations,
+         percentClean = clean_Allegations/allegations,
+         percentAggressive = aggressiveAllegations/allegations,
+         percentIC = invcor_Allegations/allegations,
+         percentBias = biasprejudice_Allegations/allegations,
+         percentPolicy = policy_Allegations/allegations,
+         percentOffDuty = offduty_Allegations/allegations) %>% 
+  select(officer,UID, allegations, percentAlone, percentSus, percentClean, percentAggressive, percentIC, percentBias, percentPolicy, percentOffDuty)
+
+percentages[is.na(percentages)] <- 0
+
+percentages_scaled <- percentages %>% select(-c(officer,UID)) %>% scale() %>% as.data.frame()
+percentages_copy <- percentages
+```
+
+
+```{r}
+# This is Kmeans clustering. Plots "scree plot" with 30 different cluster sizes
+vec <- vector(mode="double", length=30)
+
+for(i in 1:30)
+{
+  set.seed(1)
+  kmns <- kmeans(percentages_scaled, i, nstart =25)
+  myvector <- as.factor(kmns$cluster)
+  percentages_copy[[paste0("k", i)]] <- myvector
+  vec[i] <- kmns$tot.withinss
+  svMisc::progress(i, 30)
+}
+seq <- 1:30
+df <- cbind(seq, vec) %>% as.data.frame()
+df
+ggplot(df, aes(x = seq, y = vec)) + geom_line() +geom_point() +labs(y = "Total Within Cluster Sum of Squares", x= "K size", title = "K means Clustering") + theme_bw()
+```
+
+This takes a REALLY long time. The answer is 8 if we do 10 variations.
+```{r}
+fviz_nbclust(percentages_scaled, kmeans, method = "silhouette", k.max = 10)
+```
+
+```{r}
+#4 and 6 are SUPER common in known crews!!! They're only like 33% of all officers. 
+percentages_copy %>% count(k8) %>% mutate(percent = 100*n/sum(n))
+
+comms <- read.csv("../Datasets/Officer_Community_Assignments.csv") %>% left_join(percentages_copy %>% select(UID, k8), by = "UID")%>% mutate(CrewIndicator = ifelse(k8==4|k8==6, "Yes", "No")) %>% mutate(Community_ID = as.integer(Community_ID))
+comms %>% filter(Crew!="None") %>% count(Crew, k8) 
+comms %>% count(Community_ID, CrewIndicator)%>% filter(Community_ID %in% c(186,187,2076))
+#Looks like detected crews also have a high rate of 4 and 6
+
+comms %>% filter(Community_ID!="None") %>% count(k8) %>% mutate(percent = 100*n/sum(n))
+#4 and 6 are roughly 70% of the people in the network.
+
+comms %>% filter(UID %in% complaints$UID)%>% count(k8) %>% mutate(percent = 100*n/sum(n))
+#4 and 6 are roughly 47% of people who have received complaints
+```
+
+```{r}
+averages <- percentages_copy[3:11] %>% cbind(percentages_copy %>% select(k8))%>% group_by(k8) %>% summarize_all("mean")
+averages %>% write.csv("../Datasets/AverageClusterResults.csv")
+```
+
+
+```{r}
+comms <- read.csv("../Datasets/Officer_Community_Assignments.csv") %>% 
+  left_join(percentages_copy %>% select(UID, k8), by = "UID") %>%
+  mutate(CrewIndicator = ifelse(k8==4|k8==6, "Yes", "No")) %>%
+  mutate(Community_ID = as.integer(Community_ID)) 
+comms%>% 
+  group_by(Community_ID) %>% 
+  summarize(percentFlagged = 100*sum(CrewIndicator == "Yes")/n()) %>% 
+  ungroup() %>% 
+  write.csv("../Datasets/CommunitiesPercentFlagged.csv")
+```
+
+
