@@ -214,7 +214,7 @@ crewComplaint <- complaints %>%
   summarize(CrewComplaint = ifelse(sum(DetectedCrew=="Yes")>0,"Yes","No"))
 ```
 
-#ARRESTS
+ARRESTS. Could not be pushed to GitHub.
 ```{r}
 arrests <- read.csv("../Datasets/CB_Officer_UID.csv")
 
