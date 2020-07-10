@@ -8,6 +8,7 @@ library(readxl)
 library(ggplot2)
 ```
 
+First, we read in the datasets of both community assignments and the dataset indexed by community.
 ```{r}
 comms <- read.csv("../Datasets/AttributesByCommunity.csv")
 settlements <- read.csv("../datasets/settlements.csv") %>% group_by(UID) %>% summarize(settlementTotal = n(), settlementAmount = sum(settlement))
@@ -23,49 +24,49 @@ complaints <-read.csv("../Datasets/Complaint_Dataset.csv")
 
 ```
 
-### This creates a victimization dataset
+This creates a complainant dataset so we can analyze further trends.
 ```{r}
-blackmales <- read_xlsx("../../Victimization_Complaints/blackmales.xlsx", sheet = "Allegations") %>% 
-  mutate(Vic = "Black Male") %>% 
-  distinct(CRID, Vic)
+blackmales <- read_xlsx("../Datasets/Original Data/ComplainantSubsets/blackmales.xlsx", sheet = "Allegations") %>% 
+  mutate(Complainant = "Black Male") %>% 
+  distinct(CRID, Complainant)
 
-blackfemales <- read_xlsx("../../Victimization_Complaints/blackfemales.xlsx", sheet = "Allegations") %>% 
-  mutate(Vic = "Black Female") %>% 
-  distinct(CRID, Vic)
+blackfemales <- read_xlsx("../Datasets/Original Data/ComplainantSubsets/blackfemales.xlsx", sheet = "Allegations") %>% 
+  mutate(Complainant = "Black Female") %>% 
+  distinct(CRID, Complainant)
 
-whitemales <- read_xlsx("../../Victimization_Complaints/whitemales.xlsx", sheet = "Allegations") %>% 
-  mutate(Vic = "White Male") %>% 
-  distinct(CRID, Vic)
+whitemales <- read_xlsx("../Datasets/Original Data/ComplainantSubsets/whitemales.xlsx", sheet = "Allegations") %>% 
+  mutate(Complainant = "White Male") %>% 
+  distinct(CRID, Complainant)
 
-whitefemales <- read_xlsx("../../Victimization_Complaints/whitefemales.xlsx", sheet = "Allegations") %>% 
-  mutate(Vic = "White Female") %>% 
-  distinct(CRID, Vic)
+whitefemales <- read_xlsx("../Datasets/Original Data/ComplainantSubsets/whitefemales.xlsx", sheet = "Allegations") %>% 
+  mutate(Complainant = "White Female") %>% 
+  distinct(CRID, Complainant)
 
-hispanicmales <- read_xlsx("../../Victimization_Complaints/hispanicmales.xlsx", sheet = "Allegations") %>% 
-  mutate(Vic = "Hispanic Male") %>% 
-  distinct(CRID, Vic)
+hispanicmales <- read_xlsx("../Datasets/Original Data/ComplainantSubsets/hispanicmales.xlsx", sheet = "Allegations") %>% 
+  mutate(Complainant = "Hispanic Male") %>% 
+  distinct(CRID, Complainant)
 
-hispanicfemales <- read_xlsx("../../Victimization_Complaints/hispanicfemales.xlsx", sheet = "Allegations") %>% 
-  mutate(Vic = "Hispanic Female") %>% 
-  distinct(CRID, Vic)
+hispanicfemales <- read_xlsx("../Datasets/Original Data/ComplainantSubsets/hispanicfemales.xlsx", sheet = "Allegations") %>% 
+  mutate(Complainant = "Hispanic Female") %>% 
+  distinct(CRID, Complainant)
 
-naanmales <- read_xlsx("../../Victimization_Complaints/naanmales.xlsx", sheet = "Allegations") %>% 
-  mutate(Vic = "NAAN Male") %>% 
-  distinct(CRID, Vic)
+naanmales <- read_xlsx("../Datasets/Original Data/ComplainantSubsets/naanmales.xlsx", sheet = "Allegations") %>% 
+  mutate(Complainant = "NAAN Male") %>% 
+  distinct(CRID, Complainant)
 
-naanfemales <- read_xlsx("../../Victimization_Complaints/naanfemales.xlsx", sheet = "Allegations") %>% 
-  mutate(Vic = "NAAN Female") %>% 
-  distinct(CRID, Vic)
+naanfemales <- read_xlsx("../Datasets/Original Data/ComplainantSubsets/naanfemales.xlsx", sheet = "Allegations") %>% 
+  mutate(Complainant = "NAAN Female") %>% 
+  distinct(CRID, Complainant)
 
-apimales <- read_xlsx("../../Victimization_Complaints/asianpacificislandermales.xlsx", sheet = "Allegations") %>% 
-  mutate(Vic = "API Male") %>% 
-  distinct(CRID, Vic)
+apimales <- read_xlsx("../Datasets/Original Data/ComplainantSubsets/asianpacificislandermales.xlsx", sheet = "Allegations") %>% 
+  mutate(Complainant = "API Male") %>% 
+  distinct(CRID, Complainant)
 
-apifemales <- read_xlsx("../../Victimization_Complaints/asianpacificislanderfemales.xlsx", sheet = "Allegations") %>% 
-  mutate(Vic = "API Female") %>% 
-  distinct(CRID, Vic)
+apifemales <- read_xlsx("../Datasets/Original Data/ComplainantSubsets/asianpacificislanderfemales.xlsx", sheet = "Allegations") %>% 
+  mutate(Complainant = "API Female") %>% 
+  distinct(CRID, Complainant)
 
-allVics <- blackmales %>% 
+allComplainants <- blackmales %>% 
   rbind(blackfemales) %>% 
   rbind(whitemales)%>% 
   rbind(whitefemales) %>% 
@@ -79,51 +80,36 @@ allVics <- blackmales %>%
 #2007 is the first year of good race and gender data
 
 library(tidyr)
-vics <- allVics %>% count(CRID, Vic) %>% spread(Vic, n) %>% mutate(CRID = as.integer(CRID))
-vics[is.na(vics)] <-0
-vics
+Complainants <- allComplainants %>% count(CRID, Complainant) %>% spread(Complainant, n) %>% mutate(CRID = as.integer(CRID))
+Complainants[is.na(Complainants)] <-0
+Complainants
 
 crewComplaint <- complaints %>% 
   left_join(commAssignments %>% select(UID, DetectedCrew)) %>% 
   group_by(CRID) %>% 
   summarize(CrewComplaint = ifelse(sum(DetectedCrew=="Yes")>0,"Yes","No")) %>% 
   ungroup()
-vics2 <- left_join(vics, crewComplaint)
+Complainants2 <- left_join(Complainants, crewComplaint)
 
-```
-
-```{r}
-vics<- allVics %>%  mutate(Victim=Vic) %>% 
-  tidyr::separate(Vic, c("Race", "Gender")) %>%
+Complainants<- allComplainants %>%  mutate(ComplainantID=Complainant) %>% 
+  tidyr::separate(ComplainantID, c("Race", "Gender")) %>%
   mutate(CRID=as.integer(CRID)) %>% 
   left_join(crewComplaint)
-vics %>% 
-  filter(Victim=="White Female") %>% 
-  count(CrewComplaint) %>% 
-  mutate(percent = n*100/sum(n))
-```
 
-
-```{r}
-vics2 %>% 
+Complainants2 %>% 
   group_by(CrewComplaint) %>% 
   summarize_all("sum") %>% 
   select(-CRID) %>%
   janitor::clean_names() %>% mutate_at(vars(api_female: white_male), funs(./sum(.)))
 
 
-complaints %>% left_join(commAssignments) %>% select(CRID, UID, DetectedCrew) %>%  filter(CRID %in% (vics2 %>% pull(CRID))) %>% distinct(UID, .keep_all=TRUE) %>% mutate(DetectedCrew = ifelse(is.na(DetectedCrew), "No", DetectedCrew)) %>% count(DetectedCrew) %>% mutate(percent = 100*n/sum(n))
+complaints %>% left_join(commAssignments) %>% select(CRID, UID, DetectedCrew) %>%  filter(CRID %in% (Complainants2 %>% pull(CRID))) %>% distinct(UID, .keep_all=TRUE) %>% mutate(DetectedCrew = ifelse(is.na(DetectedCrew), "No", DetectedCrew)) %>% count(DetectedCrew) %>% mutate(percent = 100*n/sum(n))
 
-vics %>% 
+Complainants %>% 
   count(CrewComplaint) %>% 
   mutate(percent = 100*n/sum(n))
-```
-```{r}
-vics
-```
 
-```{r}
-vics%>% 
+Complainants2%>% 
   group_by(CrewComplaint) %>% 
   select(-CRID) %>% 
   summarize_all("sum") %>% 
@@ -131,25 +117,23 @@ vics%>%
   as.matrix() %>% 
   rowSums()
 
-#Responsible for 24.932% of total victims,
+#Responsible for 24.932% of total Complainants,
 16147/(16147+48616)
 
 ```
 
+Crew Officers make up only 3.43% of all officers
 ```{r}
 #3.433% of all officers
 nrow(commAssignments %>% filter(DetectedCrew=="Yes"))/nrow(commAssignments)*100
 ```
 
+This makes a nice graph that breaks down the complainant distribution for crew officers and non-crew officers
 ```{r}
-vics
-```
-
-```{r}
-temp <- vics %>% filter(CrewComplaint == "Yes") %>% count(Victim)
+temp <- Complainants %>% filter(CrewComplaint == "Yes") %>% count(Complainant)
 temp
 df <- temp%>% 
-  separate(Victim, c("Race", "Gender")) %>% 
+  separate(Complainant, c("Race", "Gender")) %>% 
   mutate(percent = 100*n/sum(n)) %>% 
   filter(Race!="API") %>% 
   filter(Race!="NAAN") %>% 
@@ -158,16 +142,16 @@ df <- temp%>%
 df %>% ggplot(aes(fill = Gender, label = percentval, x=Race, y= percent))+
   geom_col()+
   geom_text(size = 4,position = position_stack(vjust = 0.5))+
-  ggtitle("Victimization Patterns of Detected Crew Officers\n")+
-  xlab("\nVictim Race")+
+  ggtitle("Complainantization Patterns of Detected Crew Officers\n")+
+  xlab("\nComplainant Race")+
   ylab("Percent\n")+
   theme(plot.title = element_text(hjust = 0.5))+
   ylim(c(0,80))
 
 
-df2 <- vics%>%
-  count(Victim) %>% 
-  separate(Victim, c("Race", "Gender")) %>% 
+df2 <- Complainants%>%
+  count(Complainant) %>% 
+  separate(Complainant, c("Race", "Gender")) %>% 
   mutate(percent = 100*n/sum(n)) %>% 
   filter(Race!="API") %>% 
   filter(Race!="NAAN") %>% 
@@ -187,57 +171,22 @@ dfBoth%>% ggplot(aes(fill = Gender, label = percentval, x=Race, y= percent))+
   ylim(c(0,80))+
   facet_wrap(~Type)
 ```
-
+This lets us do some quick t-tests to identify complainant patterns that are different.
 ```{r}
-```
-
-```{r}
-temp <- vics %>% filter(CrewComplaint=="Yes") %>% mutate(Type = "CREW") %>% rbind(vics %>% mutate(Type="ALL")) %>% 
-  mutate(var = ifelse(Victim=="Hispanic Female",1, 0))
+temp <- Complainants %>% filter(CrewComplaint=="Yes") %>% mutate(Type = "CREW") %>% rbind(Complainants %>% mutate(Type="ALL")) %>% 
+  mutate(var = ifelse(Complainant=="Black Male",1, 0))
 t.test(temp$var~ temp$Type)
 ```
 
 
-
-```{r}
-one <- complaints %>% left_join(crewComplaint) %>% filter(CrewComplaint=="Yes") %>% select(CRID, UID, unit) %>% mutate(val = 1) %>% spread(unit, val) %>% select(-c(CRID, UID)) %>% mutate(Type = "Crew")
-two <- complaints %>% left_join(crewComplaint) %>% select(CRID, UID, unit) %>% mutate(val = 1) %>% spread(unit, val)%>% select(-c(CRID, UID))%>% mutate(Type = "All")
-one[is.na(one)] <- 0
-two[is.na(two)] <- 0
-allUnits <- two %>% plyr::rbind.fill(one)
-```
-```{r}
-district <- complaints %>% 
-  mutate(unit = ifelse(unit<26, "District", "Special Unit")) %>% 
-  distinct(UID, unit, .keep_all = TRUE) %>% 
-  left_join(commAssignments %>% select(UID, DetectedCrew)) %>% 
-  select(UID, unit, DetectedCrew) %>% 
-  filter(!is.na(unit)) %>% 
-  mutate(districtCop = ifelse(unit=="District", 1,0)) %>% 
-  mutate(DetectedCrew = ifelse(DetectedCrew=="Yes", 1,0))
-district %>% count(DetectedCrew)
-t.test(district$districtCop ~ district$DetectedCrew)
-```
-
-```{r}
-kable(table1[,1:3],  
-      align = 'c', 
-      caption = 'Comparison of matched samples', col.names = c("All", "Crew", "p-value"))
-```
-
-
-
-
-```{r}
-commAssignments
-```
-
+We want to see if officer race changes based on the findings.
 ```{r}
 temp <- commAssignments %>% mutate(var = race=="BLACK")
 
 t.test(temp$var ~temp$DetectedCrew)
 ```
 
+We now take a closer look at the settlement data
 ```{r}
 settlements2 <- read.csv("../datasets/settlements.csv")
 settlements2
@@ -250,6 +199,7 @@ settlements2 %>%
   summarize(total = n(), settlement = sum(settlement))
 ```
 
+This tells us how many complaints are "crew" complaints
 ```{r}
 complaints %>% 
   left_join(commAssignments %>% select(UID, DetectedCrew)) %>% 
@@ -266,22 +216,8 @@ crewComplaint <- complaints %>%
 
 #ARRESTS
 ```{r}
-arrests <- read.csv("../../../chicago-arresting-officer/N3 Work/Datasets/CB_Officer_UID.csv")
-```
+arrests <- read.csv("../Datasets/CB_Officer_UID.csv")
 
-```{r}
-read.csv("../Datasets/settlements.csv") %>% count(case_id)
-```
-```{r}
-commAssignments %>% filter(Community_ID == 1928) %>% left_join(Degrees %>% select(-X))
-```
-```{r}
-crids <- complaints %>% filter(UID==3311) %>% pull(CRID)
-complaints %>% filter(CRID %in% crids) %>% arrange(CRID)
-```
-
-
-```{r}
 arrests %>% 
   left_join(commAssignments %>% select(UID, DetectedCrew)) %>% 
   distinct(UID, .keep_all=TRUE) %>% 
@@ -289,7 +225,7 @@ arrests %>%
   count(DetectedCrew) %>% 
   mutate(percent = n*100/sum(n))
 ```
-
+Crew officers are listed on ~15% of arrests despite comprising only ~5% of officers
 ```{r}
 arrests %>% 
   left_join(commAssignments %>% select(UID, DetectedCrew)) %>%
@@ -298,21 +234,11 @@ arrests %>%
   summarize(CrewArrest = ifelse(sum(DetectedCrew=="Yes")>0,"Yes","No")) %>% 
   count(CrewArrest) %>% 
   mutate(percent = n*100/sum(n))
-
-arrests %>% 
-  left_join(commAssignments %>% select(UID, DetectedCrew)) %>%
-  mutate(DetectedCrew = ifelse(is.na(DetectedCrew), "No", DetectedCrew)) %>% 
-  count(DetectedCrew) %>% 
-  mutate(percent = n*100/sum(n))
 ```
 
 #Look into specific crews
-```{r}
-uids <- commAssignments %>% filter(Community_ID==108) %>% pull(UID)
-crew108 <- complaints %>% filter(UID %in% uids) %>% group_by(CRID) %>% filter(n()>1)  %>% distinct(CRID, .keep_all=TRUE)
-crew108 %>% ungroup() %>% count(Finding)
-```
 
+First up is 15
 ```{r}
 Degrees <- read.csv("../Datasets/NodeDegrees.csv")
 comms %>% filter(Community_ID==15)
@@ -327,6 +253,8 @@ complaints %>% filter(UID %in% uids) %>% group_by(CRID) %>% filter(n()>1) %>% un
 read.csv("../datasets/settlements.csv") %>% filter(UID %in% uids) %>% distinct(case_id, .keep_all = TRUE) %>% pull(settlement) %>% sum()
 
 ```
+
+Next we have 413
 ```{r}
 comms%>% filter(Community_ID==413)
 commAssignments %>% filter(Community_ID==413) %>% left_join(Degrees %>% select(-X), by= "UID")
@@ -337,7 +265,7 @@ complaints %>% filter(UID %in% uids) %>% count(unit)
 read.csv("../datasets/settlements.csv") %>% filter(UID %in% uids) %>% distinct(case_id, .keep_all = TRUE) %>% pull(settlement) %>% sum()
 
 ```
-
+Finally we have 424
 ```{r}
 comms %>% filter(Community_ID==424)
 commAssignments %>% filter(Community_ID==424)%>% left_join(Degrees %>% select(-X), by= "UID")
@@ -345,6 +273,8 @@ uids <- commAssignments %>% filter(Community_ID==424)%>% left_join(Degrees %>% s
 complaints %>% filter(UID %in% uids) %>% group_by(CRID) %>% filter(n()>1) %>% ungroup() %>% distinct(CRID, .keep_all=TRUE) %>% count(Finding)
 read.csv("../datasets/settlements.csv") %>% filter(UID %in% uids) %>% distinct(case_id, .keep_all = TRUE) %>% pull(settlement) %>% sum()
 ```
+
+For our appendix, we make distributions of the degrees and weighted degrees in the network.
 ```{r}
 Degrees %>% 
   ggplot(aes(x=Degree))+
@@ -371,35 +301,8 @@ getmode <- function(v) {
 }
 getmode(Degrees$WeightedDegree)
 ```
-
-```{r}
-comms <- read.csv("../Datasets/AttributesByCommunity.csv")
-uids <- officerAssignments%>% 
-  mutate(Community_ID=as.integer(Community_ID)) %>% 
-  left_join(comms, by = "Community_ID") %>% 
-  filter(DetectedCrew=="Yes") %>% pull(UID)
-complaints %>% filter(UID %in% uids) %>% count(year)
-
-officerAssignments%>% 
-  mutate(Community_ID=as.integer(Community_ID)) %>% 
-  left_join(comms, by = "Community_ID") %>% 
-  filter(DetectedCrew=="Yes") %>% 
-  filter(current_status == 1)
-```
-```{r}
-allVics%>% separate(Vic, c("Race", "Gender")) %>% mutate(CRID = as.integer(CRID)) %>% left_join(crewComplaint, by="CRID") %>%filter(Race=="Black") %>%  count(CrewComplaint) %>% mutate(percent = 100*n/sum(n))
-```
+Crews are listed on 23.79% of all use of force complaints
 ```{r}
 complaints %>% filter(Category=="Use Of Force") %>% left_join(crewComplaint) %>% count(CrewComplaint) %>% mutate(percent = n*100/sum(n))
-```
-```{r}
-complaints %>% filter(UID %in% crewUIDs) %>% count(year)
-```
-
-```{r}
-settlements <- read.csv("../datasets/settlements.csv")
-
-setts <- settlements %>% mutate(crew = UID %in% crewUIDs) %>% group_by (case_id) %>% summarize(crew = sum(crew==TRUE)>0, settlement = mean(settlement))
-t.test(setts$settlement ~ setts$crew)
 ```
 
