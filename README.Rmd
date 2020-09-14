@@ -33,7 +33,7 @@ Use the following format:
 
 ## Methodology
 
-Briefly describe the most essential parts of your methodology, making sure to include the names of datasets that were used and a link or reference to any external datasets. Also, include a description of any code or scripts you need to run the project, any order they should be run on, and any unusual dependencies, quirks, or features you think others should know about. 
+Briefly describe the most essential parts of your methodology, making sure to include the names of datasets that were used and a link or reference to any external datasets. Give an in-depth description of any code or scripts you need to run the project, including the order they should be run in and any unusual dependencies, quirks, or features you think others should know about to reproduce your project.
 
 ## Table of Contents
 A linked table of contents for all the files on the repo (you *do not* need to include the README and .gitignore files in this TOC)
