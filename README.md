@@ -1,7 +1,7 @@
 Repo Template
 ================
-**Repo Manager:** Adam Shelton <br />
-**Last updated:** September 14, 2020
+**Repo Manager:** Adam Shelton <br /> <!--this br tag is important formatting, do not delete!-->
+**Last updated:** September 30, 2020
 
 ## Overview
 

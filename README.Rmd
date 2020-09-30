@@ -1,6 +1,6 @@
 ---
 title: "Repo Template"
-author: "**Repo Manager:** Adam Shelton <br />" # <- this br tag is import formatting, do not delete!
+author: "**Repo Manager:** Adam Shelton <br />" # <- this br tag is important formatting, do not delete!
 date: "`r paste('**Last updated:**', format(Sys.time(), '%B %d, %Y'))`"
 output: github_document
 ---
