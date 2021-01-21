@@ -140,12 +140,7 @@ vignettes/*.pdf
 *.knit.md
 
 
-## DATA FILES ##
-
-# data folder
-Data/
-data/
-DATA/
+## DATA FILES ##s
 # CSV
 *.csv
 #Excel
