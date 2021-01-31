@@ -132,7 +132,7 @@ comms <- comms %>%
 
 ```
 
-
+# Plot
 ```{r}
 dens <- density(crewFactors$Index_Value)
 
@@ -157,6 +157,7 @@ ggplot(data, aes(x, y)) + geom_line() +
 # 1156 officers are in crews (3.432508%) of all the officers in the roster+complaint datasets
 ```
 
+# Look at settlements data
 ```{r}
 settlementsPerOfficer <- read.csv("../Datasets/Settlements.csv") %>% group_by(UID) %>% summarize(totalSettlements = n()) %>% ungroup()
 
@@ -172,6 +173,7 @@ comms <- comms %>% left_join(settlementsPerComm, by = "Community_ID")
 
 ```
 
+# Export results
 ```{r}
 comms %>% write.csv("../Datasets/AttributesByCommunity.csv")
 ```

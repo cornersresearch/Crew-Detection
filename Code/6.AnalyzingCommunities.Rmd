@@ -8,7 +8,7 @@ library(readxl)
 library(ggplot2)
 ```
 
-First, we read in the datasets of both community assignments and the dataset indexed by community.
+# First, we read in the datasets of both community assignments and the dataset indexed by community.
 ```{r}
 comms <- read.csv("../Datasets/AttributesByCommunity.csv")
 settlements <- read.csv("../datasets/settlements.csv") %>% group_by(UID) %>% summarize(settlementTotal = n(), settlementAmount = sum(settlement))
@@ -24,7 +24,7 @@ complaints <-read.csv("../Datasets/Complaint_Dataset.csv")
 
 ```
 
-This creates a complainant dataset so we can analyze further trends.
+# This creates a complainant dataset so we can analyze further trends.
 ```{r}
 blackmales <- read_xlsx("../Datasets/Original Data/ComplainantSubsets/blackmales.xlsx", sheet = "Allegations") %>% 
   mutate(Complainant = "Black Male") %>% 
@@ -79,7 +79,6 @@ allComplainants <- blackmales %>%
 
 #2007 is the first year of good race and gender data
 
-library(tidyr)
 Complainants <- allComplainants %>% count(CRID, Complainant) %>% spread(Complainant, n) %>% mutate(CRID = as.integer(CRID))
 Complainants[is.na(Complainants)] <-0
 Complainants
@@ -122,13 +121,13 @@ Complainants2%>%
 
 ```
 
-Crew Officers make up only 3.43% of all officers
+# Crew Officers make up only 3.43% of all officers
 ```{r}
 #3.433% of all officers
 nrow(commAssignments %>% filter(DetectedCrew=="Yes"))/nrow(commAssignments)*100
 ```
 
-This makes a nice graph that breaks down the complainant distribution for crew officers and non-crew officers
+# This makes a nice graph that breaks down the complainant distribution for crew officers and non-crew officers
 ```{r}
 temp <- Complainants %>% filter(CrewComplaint == "Yes") %>% count(Complainant)
 temp
@@ -171,7 +170,7 @@ dfBoth%>% ggplot(aes(fill = Gender, label = percentval, x=Race, y= percent))+
   ylim(c(0,80))+
   facet_wrap(~Type)
 ```
-This lets us do some quick t-tests to identify complainant patterns that are different.
+# This lets us do some quick t-tests to identify complainant patterns that are different. You can change the complainant name to check a different complainant type. 
 ```{r}
 temp <- Complainants %>% filter(CrewComplaint=="Yes") %>% mutate(Type = "CREW") %>% rbind(Complainants %>% mutate(Type="ALL")) %>% 
   mutate(var = ifelse(Complainant=="Black Male",1, 0))
@@ -179,14 +178,15 @@ t.test(temp$var~ temp$Type)
 ```
 
 
-We want to see if officer race changes based on the findings.
+# We want to see if officer race changes based on the findings.
+
 ```{r}
 temp <- commAssignments %>% mutate(var = race=="BLACK")
 
 t.test(temp$var ~temp$DetectedCrew)
 ```
 
-We now take a closer look at the settlement data
+# We now take a closer look at the settlement data
 ```{r}
 settlements2 <- read.csv("../datasets/settlements.csv")
 settlements2
@@ -199,22 +199,42 @@ settlements2 %>%
   summarize(total = n(), settlement = sum(settlement))
 ```
 
-This tells us how many complaints are "crew" complaints
+# Take a look at whether the average settlement amount is different depending on crew vs not crew. 
+```{r}
+t.test(commAssignments$settlementAmount~commAssignments$DetectedCrew)
+```
+
+
+# This tells us how many complaints are "crew" complaints
 ```{r}
 complaints %>% 
   left_join(commAssignments %>% select(UID, DetectedCrew)) %>% 
   group_by(CRID) %>% 
   summarize(CrewComplaint = ifelse(sum(DetectedCrew=="Yes")>0,"Yes","No")) %>% 
   count(CrewComplaint)
-```
-```{r}
+
 crewComplaint <- complaints %>% 
   left_join(commAssignments %>% select(UID, DetectedCrew)) %>% 
   group_by(CRID) %>% 
   summarize(CrewComplaint = ifelse(sum(DetectedCrew=="Yes")>0,"Yes","No"))
 ```
 
-ARRESTS. Could not be pushed to GitHub.
+
+# Crews are listed on 23.79% of all use of force complaints
+```{r}
+complaints %>% filter(Category=="Use Of Force") %>% left_join(crewComplaint) %>% count(CrewComplaint) %>% mutate(percent = n*100/sum(n))
+```
+
+# Take a look at the mode weighted degree. 
+```{r} 
+getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+getmode(Degrees$WeightedDegree)
+```
+
+# Take a look at arrests for crews vs non-crews.
 ```{r}
 arrests <- read.csv("../Datasets/CB_Officer_UID.csv")
 
@@ -225,7 +245,8 @@ arrests %>%
   count(DetectedCrew) %>% 
   mutate(percent = n*100/sum(n))
 ```
-Crew officers are listed on ~15% of arrests despite comprising only ~5% of officers
+
+# Crew officers are listed on ~15% of arrests despite comprising only ~5% of officers
 ```{r}
 arrests %>% 
   left_join(commAssignments %>% select(UID, DetectedCrew)) %>%
@@ -236,9 +257,16 @@ arrests %>%
   mutate(percent = n*100/sum(n))
 ```
 
+# Crews are 391,585 arrests for 979 officers
+# Non Crews are 2,193,391 arrests for 16,579 officers.
+```{r}
+391585/979
+2193391/16579
+```
+
 #Look into specific crews
 
-First up is 15
+First up is Crew Number 15 (c15)
 ```{r}
 Degrees <- read.csv("../Datasets/NodeDegrees.csv")
 comms %>% filter(Community_ID==15)
@@ -254,7 +282,7 @@ read.csv("../datasets/settlements.csv") %>% filter(UID %in% uids) %>% distinct(c
 
 ```
 
-Next we have 413
+Next we have Crew Number 413 (c413)
 ```{r}
 comms%>% filter(Community_ID==413)
 commAssignments %>% filter(Community_ID==413) %>% left_join(Degrees %>% select(-X), by= "UID")
@@ -265,7 +293,8 @@ complaints %>% filter(UID %in% uids) %>% count(unit)
 read.csv("../datasets/settlements.csv") %>% filter(UID %in% uids) %>% distinct(case_id, .keep_all = TRUE) %>% pull(settlement) %>% sum()
 
 ```
-Finally we have 424
+
+Finally we have Crew Number 424 (c424)
 ```{r}
 comms %>% filter(Community_ID==424)
 commAssignments %>% filter(Community_ID==424)%>% left_join(Degrees %>% select(-X), by= "UID")
@@ -274,7 +303,7 @@ complaints %>% filter(UID %in% uids) %>% group_by(CRID) %>% filter(n()>1) %>% un
 read.csv("../datasets/settlements.csv") %>% filter(UID %in% uids) %>% distinct(case_id, .keep_all = TRUE) %>% pull(settlement) %>% sum()
 ```
 
-For our appendix, we make distributions of the degrees and weighted degrees in the network.
+# For our appendix, we make distribution plots of the degrees and weighted degrees in the network.
 ```{r}
 Degrees %>% 
   ggplot(aes(x=Degree))+
@@ -295,14 +324,6 @@ Degrees %>%
   xlab("Weighted-Degree")+
   ylab("Density")+
   theme(plot.title = element_text(hjust = 0.5))
-getmode <- function(v) {
-   uniqv <- unique(v)
-   uniqv[which.max(tabulate(match(v, uniqv)))]
-}
-getmode(Degrees$WeightedDegree)
 ```
-Crews are listed on 23.79% of all use of force complaints
-```{r}
-complaints %>% filter(Category=="Use Of Force") %>% left_join(crewComplaint) %>% count(CrewComplaint) %>% mutate(percent = n*100/sum(n))
-```
+
 

@@ -17,6 +17,8 @@ complaints <- read.csv("../Datasets/Complaint_Dataset.csv", stringsAsFactors = F
 ```
 
 ```{r}
+# We first get a dataset of officer + UID for all officers (received complaints or not)
+
 officers <- complaints %>% 
   select(officer, UID) %>% 
   group_by(officer, UID) %>% 
@@ -30,6 +32,7 @@ otherOfficers <- roster %>%
 
 officers <- officers %>% rbind(otherOfficers)
 
+# for each of these different complaint types, we generate counts by UID and then merge.
 soloComplaints <- complaints %>% 
   group_by(CRID) %>% 
   filter(n()==1) %>% 
@@ -91,17 +94,11 @@ officers <- officers %>%
   left_join(sustained_complaints, by = "UID")%>% 
   left_join(clean_complaints, by = "UID")
 officers[is.na(officers)] <- 0
-  
-```
-
-```{r}
-officers[is.na(officers)] <- 0
-  
-officers
 ```
 
 
 ```{r}
+# We take the dataset we just created and create percentages fields since that's what we're actually interested in.
 percentages <- officers %>% 
   mutate(percentAlone = soloAllegations/allegations,
          percentSus = sustained_Allegations/allegations,
@@ -161,12 +158,15 @@ comms %>% filter(UID %in% complaints$UID)%>% count(k8) %>% mutate(percent = 100*
 ```
 
 ```{r}
+# Export results
 averages <- percentages_copy[3:11] %>% cbind(percentages_copy %>% select(k8))%>% group_by(k8) %>% summarize_all("mean")
 averages %>% write.csv("../Datasets/AverageClusterResults.csv")
 ```
 
 
 ```{r}
+# Modify the comunities dataset and export with a new field.
+
 comms <- read.csv("../Datasets/Officer_Community_Assignments.csv") %>% 
   left_join(percentages_copy %>% select(UID, k8), by = "UID") %>%
   mutate(CrewIndicator = ifelse(k8==4|k8==6, "Yes", "No")) %>%
