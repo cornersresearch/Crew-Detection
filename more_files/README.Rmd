@@ -1,0 +1,25 @@
+---
+title: "Super Linter Testing"
+author: "**Repo Manager:** Adam Shelton <br />" # <- this br tag is important formatting, do not delete!
+date: "`r paste('**Last updated:**', format(Sys.time(), '%B %d, %Y'))`"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+This repo is for testing purposes only!
+
+```{r test1}
+library(tidyverse)
+library(knitr)
+
+diamonds %>% ggplot(aes(x = price, y = carat, color = cut, fill = cut)) + geom_smooth()
+
+quantile(diamonds$price) %>% enframe() %>% kable()
+
+diamonds %>% count(color) %>% kable()
+```
