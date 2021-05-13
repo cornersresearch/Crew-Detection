@@ -24,6 +24,7 @@ library(tidyverse)
 
 ``` r
 library(knitr)
+library(lintr)
 
 diamonds %>% ggplot(aes(x = price, y = carat, color = cut, fill = cut)) + geom_smooth()
 ```
