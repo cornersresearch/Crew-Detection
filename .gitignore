@@ -138,6 +138,8 @@ vignettes/*.pdf
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
+# R batch log files
+*.Rout
 
 
 ## DATA FILES ##s
