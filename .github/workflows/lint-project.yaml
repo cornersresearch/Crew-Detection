@@ -8,7 +8,7 @@ on:
       - main
       - master
 
-name: lint-project
+name: Lint project
 
 jobs:
   lint-project:
@@ -24,6 +24,19 @@ jobs:
         run: install.packages("lintr")
         shell: Rscript {0}
 
-      - name: Lint root directory
+      - name: Lint project directory
         run: lintr::lint_dir()
         shell: Rscript {0}
+      
+      - uses: actions-ecosystem/action-regex-match@v2
+        id: regex-match
+        name: Check variable names
+        with:
+          text: ${{ github.event.comment.body }}
+          regex: '^( |\t)*(\w|data) *(=|<-).*$'
+
+      - uses: actions-ecosystem/action-add-labels@v1
+        if: ${{ steps.regex-match.outputs.match != '' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: ${{ steps.regex-match.outputs.group1 }}
