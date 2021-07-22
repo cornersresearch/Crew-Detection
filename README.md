@@ -1,7 +1,7 @@
 Super Linter Testing
 ================
 **Repo Manager:** Adam Shelton <br />
-**Last updated:** July 09, 2021
+**Last updated:** July 22, 2021
 
 ## Overview
 
@@ -57,3 +57,9 @@ diamonds %>% count(color) %>% kable()
 | H     |  8304 |
 | I     |  5422 |
 | J     |  2808 |
+
+``` r
+e = 1
+
+data = 1
+```
