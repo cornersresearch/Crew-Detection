@@ -25,9 +25,9 @@ jobs:
         shell: Rscript {0}
 
       - name: Lint project directory
-        run: lintr::lint_dir()
-        shell: Rscript {0}
-      
+        run: Rscript -e 'lintr::lint("README.Rmd")'
+        shell: bash
+
       - uses: actions-ecosystem/action-regex-match@v2
         id: regex-match
         name: Check variable names
