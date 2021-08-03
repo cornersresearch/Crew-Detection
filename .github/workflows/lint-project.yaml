@@ -16,7 +16,6 @@ jobs:
     container: rocker/verse
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-    path: /
     steps:
       - uses: actions/checkout@v2
 
