@@ -168,3 +168,4 @@ vignettes/*.pdf
 *.sbx
 *.shp
 *.shx
+.github/linting_fail

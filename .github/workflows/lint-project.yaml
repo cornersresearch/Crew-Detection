@@ -19,15 +19,20 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      # - uses: r-lib/actions/setup-r@v1
-
-      - name: Install R dependencies
+      - name: Install dependencies
         run: |
-          Rscript -e 'install.packages(c("lintr", "magrittr", "stringr"))'
+          Rscript -e 'install.packages(c("lintr"))'
+          apt update
+          apt install silversearcher-ag
 
-      - name: Lint project directory
+      - name: Lint R files
         run: |
           Rscript '.github/lint_r_files.R'
+
+      - name: Check variable names
+        run: |
+          chmod u+x '.github/var_scan.sh'
+          bash '.github/var_scan.sh'
 
       - name: Linting results
         run: |
@@ -38,13 +43,6 @@ jobs:
             echo "All tests passed"
             exit 0
           fi
-
-      # - uses: actions-ecosystem/action-regex-match@v2
-      #   id: regex-match
-      #   name: Check variable names
-      #   with:
-      #     text: ${{ github.event.comment.body }}
-      #     regex: '^( |\t)*(\w|data) *(=|<-).*$'
       #
       # - uses: actions-ecosystem/action-add-labels@v1
       #   if: ${{ steps.regex-match.outputs.match != '' }}
