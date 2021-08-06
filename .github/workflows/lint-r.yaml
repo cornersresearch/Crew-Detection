@@ -11,7 +11,7 @@ on:
 name: Lint project - R
 
 jobs:
-  lint-project:
+  lint-r:
     runs-on: ubuntu-latest
     container: rocker/verse
     env:
