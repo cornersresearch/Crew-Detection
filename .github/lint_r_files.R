@@ -17,5 +17,6 @@ lint_results = lapply(files_to_lint, lint) %>% unlist(recursive = FALSE) %>% lap
 
 if (length(lint_results) > 0) {
   lint_results %>% lapply(print_lint_msg)
-  file.create(file.path(".github", "linting_fail"))
+  stop("Issues found in R scripts!")
 }
+cat("All R files are good!")

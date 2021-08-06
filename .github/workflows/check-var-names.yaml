@@ -1,0 +1,27 @@
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+name: Check variable names
+
+jobs:
+  lint-project:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        apt update
+        apt install silversearcher-ag -y
+    - name: Check variable names
+      run: |
+        chmod u+x '.github/var_scan.sh'
+        bash '.github/var_scan.sh'
