@@ -27,5 +27,4 @@ jobs:
 
       - name: Calculate comment to code ratio
         run: |
-          cloc --vcs='git' --exclude-dir=,.github,renv,venv --exclude-lang=Markdown -by-percent='cm' --json . |
           python '.github/comment_ratio.py'
