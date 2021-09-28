@@ -1,0 +1,35 @@
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+name: Check README was changed
+
+jobs:
+  diff-readme:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v2
+        with:
+          path: this-repo
+
+      - name: Clone repo template
+        run: |
+          git clone https://github.com/n3-initiative/repo-template repo-template/
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install dwdiff -y
+
+      - name: Diff README files
+        run: |
+          bash this-repo/.github/diff_files.sh

@@ -1,7 +1,7 @@
 Repo Template
 ================
-**Repo Manager:** Adam Shelton <br /> <!--this br tag is important formatting, do not delete!-->
-**Last updated:** September 30, 2020
+**Repo Manager:** Adam Shelton <br />
+**Last updated:** July 30, 2021
 
 ## Overview
 
@@ -26,8 +26,8 @@ template in both raw Markdown and R Markdown formats.
 
 3.  If you are creating a repo that is only a single R Markdown document
     without any other scripts or documents/reports, you can omit the
-    “Documents and Reports” and “Table of Contents” sections and
-    include your content at the end of this README.
+    “Documents and Reports” and “Table of Contents” sections and include
+    your content at the end of this README.
 
 This Overview section should be used to give a brief abstract of your
 project.
@@ -39,8 +39,8 @@ make sure to put them here.
 
 Use the following format:
 
-  - ***[Title of Document 1](path/to/document.pdf)***
-  - ***[Title of Document 2:](path/to/document.pdf)*** *a short
+-   ***[Title of Document 1](path/to/document.pdf)***
+-   ***[Title of Document 2:](path/to/document.pdf)*** *a short
     description of this document (if necessary)*
 
 ## Methodology
@@ -59,14 +59,14 @@ need to include the README and .gitignore files in this TOC)
 
 Use the following format:
 
-  - **[top\_level\_folder:](top_level_folder/)** *a description of this
+-   **[top\_level\_folder:](top_level_folder/)** *a description of this
     folder (if necessary)*
-      - **[second\_level\_folder:](second_level_folder/)**
-          - **[file.ext:](second_level_folder/file.ext)** *a description
+    -   **[second\_level\_folder:](second_level_folder/)**
+        -   **[file.ext:](second_level_folder/file.ext)** *a description
             of this file (required)*
-  - **[top\_level\_file.ext:](top_level_file.ext)** *a description of
+-   **[top\_level\_file.ext:](top_level_file.ext)** *a description of
     this file (required)*
 
 ## References
 
-No one likes plagiarizers, cite your work\!
+No one likes plagiarizers, cite your work!
