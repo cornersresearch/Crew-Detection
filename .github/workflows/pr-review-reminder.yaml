@@ -10,7 +10,7 @@ jobs:
   pull-request-reviewer-reminder:
     runs-on: ubuntu-latest
     env:
-      DAYS_TURNAROUND: 0.0007
+      DAYS_TURNAROUND: 7
     steps:
       - run: echo "HOURS_TURNAROUND=$(( 24 * $DAYS_TURNAROUND ))" >> $GITHUB_ENV
 
