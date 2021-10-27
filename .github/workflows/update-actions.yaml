@@ -1,0 +1,31 @@
+on:
+  push
+  pull_request
+
+name: Update From repo-template
+
+jobs:
+  update-from-template:
+    if: github.repository != 'n3-initiative/repo-template'
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      steps:
+        - uses: actions/checkout@v2
+
+        - name: Merge Upstream
+          run: |
+            git remote add -f repo-template "https://github.com/n3-initiative/repo-template.git"
+            git checkout repo-template-updates
+            git merge --allow-unrelated-histories repo-template/main
+            git push origin
+
+          - name: Create Pull Request
+            uses: vsoch/pull-request-action@master
+            env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              BRANCH_PREFIX: "repo-template"
+              PULL_REQUEST_BRANCH: "repo-template-updates"
+              PULL_REQUEST_TITLE: "Integrate changes from repo-template"
+              PASS_IF_EXISTS: TRUE
+              PULL_REQUEST_UPDATE: TRUE
