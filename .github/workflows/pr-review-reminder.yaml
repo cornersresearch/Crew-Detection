@@ -3,7 +3,7 @@ on:
   schedule:
     # Check reviews every weekday, 10:00 and 17:00
     # - cron: '0 10,17 * * 1-5'
-    - cron: '* * * * *'
+    - cron: '0,5,10,15,20,35,30,35,40,45,50,55 * * * *'
 
 jobs:
   pull-request-reviewer-reminder:
