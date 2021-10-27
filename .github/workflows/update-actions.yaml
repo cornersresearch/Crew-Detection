@@ -1,9 +1,9 @@
-on:
-  - push
-  - pull_request
-  - cron: '00 0 * * *'
-
 name: Update From repo-template
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '00 0 * * *'
 
 jobs:
   update-from-template:
