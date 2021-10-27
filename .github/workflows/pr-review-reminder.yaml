@@ -12,7 +12,7 @@ jobs:
       DAYS_TURNAROUND: 0.0007
     steps:
       - run: |
-        export HOURS_TURNAROUND=$(( 24 * $DAYS_TURNAROUND ))
+        echo "HOURS_TURNAROUND=$(( 24 * $DAYS_TURNAROUND ))" >> $GITHUB_ENV
 
       - uses: tommykw/pull-request-reviewer-reminder-action@v1
         with:
