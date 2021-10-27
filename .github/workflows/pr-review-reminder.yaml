@@ -12,9 +12,7 @@ jobs:
     env:
       DAYS_TURNAROUND: 7
     steps:
-      #- run: echo "HOURS_TURNAROUND=$(( 24 * $DAYS_TURNAROUND ))" >> $GITHUB_ENV
-
-      - run: echo "HOURS_TURNAROUND=1" >> $GITHUB_ENV
+      - run: echo "HOURS_TURNAROUND=$(( 24 * $DAYS_TURNAROUND ))" >> $GITHUB_ENV
 
       - uses: tommykw/pull-request-reviewer-reminder-action@v1
         with:
