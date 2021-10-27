@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DAYS_TURNAROUND: 0.0007
-      :
     steps:
       - run: |
         export HOURS_TURNAROUND=$(( 24 * $DAYS_TURNAROUND ))
