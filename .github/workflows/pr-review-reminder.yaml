@@ -13,7 +13,6 @@ jobs:
     steps:
       - run: |
         export HOURS_TURNAROUND=$(( 24 * $DAYS_TURNAROUND ))
-        echo "HOURS_TURNAROUND: $HOURS_TURNAROUND"
 
       - uses: tommykw/pull-request-reviewer-reminder-action@v1
         with:
