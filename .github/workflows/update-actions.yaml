@@ -24,7 +24,7 @@ jobs:
           git checkout -b repo-template-updates
           git fetch repo-template
           git merge -X theirs --allow-unrelated-histories repo-template/main
-          git push origin
+          git push --set-upstream origin repo-template-updates
 
       - name: Create Pull Request
         uses: vsoch/pull-request-action@master
