@@ -2,8 +2,7 @@ name: 'Pull request reviewer reminder'
 on:
   schedule:
     # Check reviews every weekday, 10:00 and 17:00
-    # - cron: '0 10,17 * * 1-5'
-    - cron: '*/5 * * * *'
+    - cron: '0 10,17 * * 1-5'
 
 jobs:
   pull-request-reviewer-reminder:
@@ -12,8 +11,7 @@ jobs:
       DAYS_TURNAROUND: 7
     steps:
       - name: Convert interval to hours
-      # run: echo "HOURS_TURNAROUND=$(( 24 * $DAYS_TURNAROUND ))" >> $GITHUB_ENV
-        run: echo "HOURS_TURNAROUND=1" >> $GITHUB_ENV
+        run: echo "HOURS_TURNAROUND=$(( 24 * $DAYS_TURNAROUND ))" >> $GITHUB_ENV
 
       - name: PR notification
         uses: tommykw/pull-request-reviewer-reminder-action@v1
