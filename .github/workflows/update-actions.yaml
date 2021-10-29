@@ -8,14 +8,18 @@ jobs:
     if: github.repository != 'n3-initiative/repo-template'
     runs-on: ubuntu-latest
     env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_PAT: ${{ secrets.ANDY_BOT_PAT }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.ANDY_BOT_PAT }}
 
       - name: Set `git` identity
         run: |
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
+          git config --global user.email "93400629+andy-bot-3000@users.noreply.github.com"
+          git config --global user.name "andy-bot"
+        with:
+          token: ${{ secrets.ANDY_BOT_PAT }}
 
       - name: Merge changes from `repo-template`
         run: |
@@ -25,11 +29,13 @@ jobs:
           git fetch repo-template
           git merge -X theirs --allow-unrelated-histories repo-template/main
           git push --set-upstream origin repo-template-updates
+        with:
+          token: ${{ secrets.ANDY_BOT_PAT }}
 
       - name: Create Pull Request
         uses: vsoch/pull-request-action@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ANDY_BOT_PAT }}
           BRANCH_PREFIX: "repo-template"
           PULL_REQUEST_BRANCH: "repo-template-updates"
           PULL_REQUEST_TITLE: "Integrate changes from repo-template"
