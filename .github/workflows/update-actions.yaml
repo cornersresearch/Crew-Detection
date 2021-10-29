@@ -18,19 +18,15 @@ jobs:
         run: |
           git config --global user.email "93400629+andy-bot-3000@users.noreply.github.com"
           git config --global user.name "andy-bot"
-        with:
-          token: ${{ secrets.ANDY_BOT_PAT }}
 
       - name: Merge changes from `repo-template`
         run: |
-          git remote add -f repo-template "https://github.com/n3-initiative/repo-template.git"
+          git remote add -f repo-template "https://${{ secrets.ANDY_BOT_PAT }}:x-oauth-basic@github.com/n3-initiative/repo-template.git"
           git remote -v # list all added remotes
           git checkout -b repo-template-updates
           git fetch repo-template
           git merge -X theirs --allow-unrelated-histories repo-template/main
           git push --set-upstream origin repo-template-updates
-        with:
-          token: ${{ secrets.ANDY_BOT_PAT }}
 
       - name: Create Pull Request
         uses: vsoch/pull-request-action@master
