@@ -1,4 +1,4 @@
-name: Update From repo-template
+name: Update from `repo-template`
 on:
   schedule:
     - cron: '*/5 * * * *'
@@ -29,12 +29,12 @@ jobs:
           git remote set-url origin "https://x-access-token:${{ secrets.ANDY_BOT_PAT }}@github.com/${{ github.repository }}"
           git push --set-upstream origin repo-template-updates
 
-      - name: Create Pull Request
+      - name: Create pull request
         uses: vsoch/pull-request-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.ANDY_BOT_PAT }}
           BRANCH_PREFIX: "repo-template"
-          PULL_REQUEST_BRANCH: "repo-template-updates"
-          PULL_REQUEST_TITLE: "Integrate changes from repo-template"
+          PULL_REQUEST_FROM_BRANCH: "repo-template-updates"
+          PULL_REQUEST_TITLE: "Integrate changes from `repo-template`"
           PASS_IF_EXISTS: TRUE
           PULL_REQUEST_UPDATE: TRUE
