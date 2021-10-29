@@ -1,8 +1,7 @@
 name: Update From repo-template
 on:
-  pull_request:
   schedule:
-    - cron: '00 0 * * *'
+    - cron: '*/5 * * * *'
 
 jobs:
   update-from-template:
@@ -16,8 +15,10 @@ jobs:
       - name: Merge Upstream
         run: |
           git remote add -f repo-template "https://github.com/n3-initiative/repo-template.git"
-          git checkout repo-template-updates
-          git merge --allow-unrelated-histories repo-template/main
+          git remote -v # list all added remotes
+          git checkout -b repo-template-updates
+          git fetch repo-template
+          git merge -X theirs --allow-unrelated-histories repo-template/main
           git push origin
 
       - name: Create Pull Request
