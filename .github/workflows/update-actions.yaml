@@ -17,7 +17,7 @@ jobs:
       - name: Set `git` identity
         run: |
           git config --global user.email "93400629+andy-bot-3000@users.noreply.github.com"
-          git config --global user.name "andy-bot"
+          git config --global user.name "andy-bot[bot]"
 
       - name: Merge changes from `repo-template`
         run: |
@@ -26,6 +26,7 @@ jobs:
           git checkout -b repo-template-updates
           git fetch repo-template
           git merge -X theirs --allow-unrelated-histories repo-template/main
+          git remote set-url origin "https://x-access-token:${{ secrets.ANDY_BOT_PAT }}@github.com/${{ github.repository }}"
           git push --set-upstream origin repo-template-updates
 
       - name: Create Pull Request
