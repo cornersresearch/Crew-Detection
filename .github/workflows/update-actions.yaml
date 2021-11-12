@@ -1,7 +1,7 @@
 name: Update from `repo-template`
 on:
   schedule:
-    - cron: '0 10 1 * *'
+    - cron: '0 10 1,15 * *'
 
 jobs:
   update-from-template:
@@ -13,6 +13,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           token: ${{ secrets.ANDY_BOT_PAT }}
+          fetch-depth: 0
 
       - name: Set `git` identity
         run: |
@@ -23,14 +24,29 @@ jobs:
         run: |
           git remote add -f repo-template "https://${{ secrets.ANDY_BOT_PAT }}:x-oauth-basic@github.com/n3-initiative/repo-template.git"
           git remote -v # list all added remotes
-          git checkout -b repo-template-updates
-          git fetch repo-template
+          git fetch --all
+          if [[ $(git ls-remote origin repo-template-updates) ]]; then
+            echo "Update branch found on remote, checking out..."
+            git checkout -t origin/repo-template-updates
+          else
+            echo "No update branch found on remote, creating..."
+            git checkout -b repo-template-updates
+          fi
           git merge -X theirs --allow-unrelated-histories repo-template/main
+          if [[ $(git diff main...repo-template-updates) ]]; then
+            echo "Changes found in repo-template, pushing to remote..."
+            echo "OPEN_PR=true" >> "$GITHUB_ENV"
+          else
+            echo "There are no changes on repo-template, exiting..."
+            echo "OPEN_PR=false" >> "$GITHUB_ENV"
+            exit 0
+          fi
           git remote set-url origin "https://x-access-token:${{ secrets.ANDY_BOT_PAT }}@github.com/${{ github.repository }}"
           git push --set-upstream origin repo-template-updates
 
       - name: Create pull request
         uses: vsoch/pull-request-action@master
+        if: env.OPEN_PR == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.ANDY_BOT_PAT }}
           BRANCH_PREFIX: "repo-template"
