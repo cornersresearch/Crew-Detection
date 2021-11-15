@@ -32,7 +32,7 @@ jobs:
             echo "No update branch found on remote, creating..."
             git checkout -b repo-template-updates
           fi
-          git merge -X theirs --allow-unrelated-histories repo-template/main
+          git merge -X ours --allow-unrelated-histories repo-template/main
           if [[ $(git diff main...repo-template-updates) ]]; then
             echo "Changes found in repo-template, pushing to remote..."
             echo "OPEN_PR=true" >> "$GITHUB_ENV"
