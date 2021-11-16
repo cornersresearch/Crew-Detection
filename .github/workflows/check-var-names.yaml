@@ -5,7 +5,6 @@ name: Check variable names
 jobs:
   check-var-names:
     runs-on: ubuntu-latest
-    container: python:3
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     defaults:
@@ -20,12 +19,6 @@ jobs:
         run: |
           apt update
           apt install silversearcher-ag -y
-
-      - name: Prepare files
-        run: |
-          python '.github/var_scan_cleaning.py'
-        # ^ we need to remove named arguments from files
-        # so they aren't flagged
 
       - name: Check variable names
         run: |
