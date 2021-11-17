@@ -3,7 +3,7 @@
 # run silversearcher-ag to search for regex matches in files
 
 # removes named function arguments from R and python files
-unnested_code="$(ag -rv -G '(.*\.Rmd$|.*\.R$|.*\.py$|.*\.ipynb$)' --no-color --numbers --filename --ignore={.github,renv,venv} "\w *(\((?>[^()]+|(?1))*\))" .)"
+unnested_code="$(ag -rv -G '(.*\.Rmd$|.*\.R$|.*\.py$|.*\.ipynb$)' --no-color --numbers --filename --ignore={.github,renv,venv} '\w+ *(\((?>[^()]+|(?1))*\))(?!:(\n|#| #))' .)"
 # searches R and python files for a 3-letter variable name or 'data' before an assignment operator
 bad_vars="$(echo "$unnested_code" | ag -io "^(.*\.\w{1,7}:\d{1,6}:)((\(| |\t)*(def)?(\(| |\t)*(\w{1,3}|data) *(=|<-|\(.*\)\s*:).*)")"
 if ! test -z "$bad_vars"
