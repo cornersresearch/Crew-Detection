@@ -1,11 +1,10 @@
-name: Add actions from `repo-template`
+name: Update from `repo-template`
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: '0 10 1,15 * *'
 
 jobs:
-  add-actions:
+  update-from-template:
     if: github.repository != 'n3-initiative/repo-template'
     runs-on: ubuntu-latest
     env:
@@ -26,17 +25,15 @@ jobs:
           git remote add -f repo-template "https://${{ secrets.ANDY_BOT_PAT }}:x-oauth-basic@github.com/n3-initiative/repo-template.git"
           git remote -v # list all added remotes
           git fetch --all
-          if [[ $(git ls-remote origin add-actions) ]]; then
+          if [[ $(git ls-remote origin repo-template-updates) ]]; then
             echo "Update branch found on remote, checking out..."
-            git checkout -t origin/add-actions
+            git checkout -t origin/repo-template-updates
           else
             echo "No update branch found on remote, creating..."
-            git checkout -b add-actions
+            git checkout -b repo-template-updates
           fi
           git merge -X ours --allow-unrelated-histories repo-template/main
-          git rm --ignore-unmatch .github/workflows/add-actions.yaml
-          git commit -a -m "Remove temp `add-actions` file"
-          if [[ $(git diff main...add-actions) ]]; then
+          if [[ $(git diff main...repo-template-updates) ]]; then
             echo "Changes found in repo-template, pushing to remote..."
             echo "OPEN_PR=true" >> "$GITHUB_ENV"
           else
@@ -45,15 +42,15 @@ jobs:
             exit 0
           fi
           git remote set-url origin "https://x-access-token:${{ secrets.ANDY_BOT_PAT }}@github.com/${{ github.repository }}"
-          git push --set-upstream origin add-actions
+          git push --set-upstream origin repo-template-updates
 
       - name: Create pull request
         uses: vsoch/pull-request-action@master
         if: env.OPEN_PR == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.ANDY_BOT_PAT }}
-          BRANCH_PREFIX: "add-actions"
-          PULL_REQUEST_FROM_BRANCH: "add-actions"
-          PULL_REQUEST_TITLE: "Add GitHub Actions from `repo-template`"
+          BRANCH_PREFIX: "repo-template"
+          PULL_REQUEST_FROM_BRANCH: "repo-template-updates"
+          PULL_REQUEST_TITLE: "Integrate changes from `repo-template`"
           PASS_IF_EXISTS: TRUE
           PULL_REQUEST_UPDATE: TRUE
