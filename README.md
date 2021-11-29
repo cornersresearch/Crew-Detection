@@ -69,7 +69,7 @@ think others should know about to reproduce your project.
 A linked table of contents for all the files on the repo (you *do not*
 need to list the files included in the template here)
 
-Follow this format:
+Follow the format used below:
 
 -   **[.github:](.github/)** *contains scripts and configs for GitHub
     Actions workflows*

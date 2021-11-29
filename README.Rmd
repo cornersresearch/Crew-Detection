@@ -42,7 +42,7 @@ Briefly describe the most essential parts of your methodology, making sure to in
 ## Table of Contents
 A linked table of contents for all the files on the repo (you *do not* need to list the files included in the template here)
 
-Follow this format:
+Follow the format used below:
 
 - **[.github:](.github/)** *contains scripts and configs for GitHub Actions workflows*
   - **[comment_ratio.py:](.github/comment_ratio.py)** *calculates comment to code ratio for all python files*
