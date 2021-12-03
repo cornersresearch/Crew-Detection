@@ -2,9 +2,10 @@ on:
   pull_request:
     types: [opened, ready_for_review, reopened]
 
+name: Automatic Review Request
+
 jobs:
   auto-request-review:
-    name: Automatic Review Request
     runs-on: ubuntu-latest
     steps:
       - name: Request review
