@@ -1,4 +1,10 @@
 # load necessary packages
+if ("renv:shims" %in% search()) {
+  # check if renv is being used in repo
+  # then update renv with already installed packages
+  message("Repo is using renv, re-hydrating packages from cache")
+  renv::hydrate(c("magrittr", "stringr", "lintr"))
+}
 # for pipes
 library(magrittr)
  # for regex matching
