@@ -5,15 +5,11 @@ name: Lint project - R
 jobs:
   lint-r:
     runs-on: ubuntu-latest
-    container: rocker/verse
+    container: us-docker.pkg.dev/n3-main/workflow/r-lintr
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v2
-
-      - name: Install dependencies
-        run: |
-          Rscript -e 'install.packages(c("lintr"))'
 
       - name: Lint R files
         run: |
