@@ -29,5 +29,5 @@ This adaptation is currently under construction, and as such, its structure will
 
 import_copa.R : The COPA data requires extensive reshaping and cleaning before it is usable. This scripts accomplishes that. \
 generate_copa_roster.R : The COPA data is organized by complaints, this attempts to create a "roster" of officers with a complaint from that data. \
-link_crews.R : This takes the UIDs listed in other analyses and attempts to link the officers to the II data, and  to see to what extent COPA data has coverage over those same officers and network ties. More of an ongoing investigation than discrete task, as the two datasets differ in unpredictable ways. \
+link_crews.R : This takes the UIDs listed in other analyses and attempts to link the officers to the II data, and  to see to what extent COPA data has coverage over those same officers and network ties. More of an ongoing investigation than discrete task, as the two datasets differ in unpredictable ways. 
 
