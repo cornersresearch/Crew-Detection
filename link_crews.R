@@ -76,8 +76,6 @@ unmatched_ii <- unmatched_ii%>% anti_join(star_match)
 copa_full %>% 
   filter(complaint_date == ymd("1996-10-14"))
 
-#what does the span of outcomes look like
-ggplot(data = copa_full ) + geom_b
 
 table(copa_full$initial_finding, copa_full$incident_datetime)
 
