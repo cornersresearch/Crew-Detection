@@ -88,5 +88,6 @@ for (full_name in unique(copa_named$full_name)) {
 }
 
 copa_roster <- copa_empty %>% 
-  distinct(link_id, .keep_all = TRUE)
+  distinct(link_id, .keep_all = TRUE) 
 
+write.csv(copa_roster, "Datasets/copa_roster.csv")
