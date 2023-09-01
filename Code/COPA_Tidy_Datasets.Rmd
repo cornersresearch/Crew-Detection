@@ -1,0 +1,108 @@
+---
+title: "Tidy Datasets COPA"
+output: html_document
+date: "2023-08-08"
+---
+
+#This is to create the master database using spreadsheets formed based off of the different race of the officers
+#Import race spreadsheets and join them together 
+```{r}
+copa_roster <- read.csv("Datasets/COPA/copa_roster.csv")
+copa_crews <- read.csv("Datasets/COPA/copa_crews.csv")
+copa_full <- read.csv("Datasets/COPA/copa_full.csv")
+
+```
+
+#Add officer id field to complaints data.
+```{r}
+copa_full <- copa_full %>%
+  mutate(full_name = str_to_upper(paste(accused_first_name, 
+                                        accused_last_name, sep = " "))) %>%
+  left_join(transmute(copa_roster, accused_birth_year, full_name, link_id),
+            by = c("full_name","accused_birth_year"))
+```
+
+#Create field for whether complaints are departmental or civilian issued
+```{r}
+copa_md <- copa_full %>%
+  mutate(Filedby = ifelse(cpdmember_complaint, "Officer Filed", "Civilian Filed"))
+```
+
+#Fix up Roster Data
+```{r}
+megaRoster <- megaRoster %>% select(officer, UID, middle_initial, gender, race, current_age, current_status, current_rank, appointed_date, resignation_date)
+megaRoster <- megaRoster %>% distinct(UID, .keep_all = TRUE)
+
+megaRoster %>% 
+  mutate(startYear = ifelse(year(mdy(appointed_date)) >2020,year(mdy(appointed_date))-100, year(mdy(appointed_date))))%>%
+  mutate(startYear = ifelse(is.na(startYear),  ifelse(year(ymd(appointed_date)) >2020,year(ymd(appointed_date))-100, year(ymd(appointed_date))),startYear)) %>% 
+  mutate(resignation_date = ifelse(resignation_date =="", "01/01/2018", resignation_date)) %>% 
+  mutate(endYear = ifelse(year(mdy(resignation_date)) >2020,year(mdy(resignation_date))-100, year(mdy(resignation_date)))) %>% 
+  filter(!is.na(endYear))
+endYears <- roster %>% filter(is.na(endYear)) %>% mutate(endYear = year(ymd(resignation_date)))
+megaRoster <- megaRoster %>% 
+  rbind(endYears) %>% 
+  mutate(yearsOnForce = endYear - startYear) %>% 
+  mutate(resignation_date = ifelse(resignation_date == "01/01/2018", NA, resignation_date)) %>% 
+  mutate(endYear = ifelse(is.na(resignation_date), NA, endYear))
+```
+
+
+#This is a dataset of each officer and their UID
+```{r}
+officers<- MasterDatabase %>% select(officer, UID) %>% distinct()
+megaRosterCopy <- megaRoster 
+megaRosterCopy$UID <- megaRosterCopy$UID
+megaRosterCopy <- megaRosterCopy %>% select(officer, UID) %>% distinct()
+
+officers <- officers %>% rbind(megaRosterCopy) %>% distinct()
+officers
+```
+
+#This cleans up unit history data
+#we theoretically have unit history data for most officers, it just wouldn't be updated at all
+
+
+#Obtain dataset of each complaint and how many officers were listed on a complaint
+```{r}
+offPerComp <- FullData %>% 
+  count(CRID) %>% 
+  as.data.frame() %>% 
+  rename(no_of_officers = n)
+```
+
+#Obtain filtered master database that has only officers who have received more than one complaint. This will be used for network creation.
+```{r}
+md_moreThanOne <- FullData %>% 
+  group_by(UID) %>% 
+  filter(n()>1)
+```
+
+#Fix up settlement data so that UID is the correct UID that we've been using. 
+#It looks like the current UID field matches up with the unit history UID field, so we join them and then rename fields. 
+```{r}
+uh <- read.csv("../Datasets/Original Data/Other_Raw_Data/unit-history.csv", stringsAsFactors = FALSE)
+settlements <- read.csv("../Datasets/Original Data/settlements_1952-2016_2017-01.csv") %>% 
+  mutate(year = as.numeric(substring(as.character(incident_date),1,4))) %>% filter(year>1989) %>% 
+  left_join(uh, by = "UID") %>% 
+  mutate(settlement = as.character(settlement)) %>%
+  mutate(settlement = substr(settlement,2,nchar(settlement))) %>% 
+  mutate(settlement = gsub(",", "",settlement)) %>%
+  mutate(settlement = as.numeric(settlement)) %>% 
+  select(-UID) %>% 
+  rename(UID = link_UID) %>%
+  left_join(officers, by = "UID") %>% 
+  select(case_id, UID, officer, complaint, incident_date, location, plantiff, settlement, service_length, year) %>% 
+  distinct() %>% 
+  rename(plaintiff = plantiff) 
+```
+
+#Export all Data
+```{r}
+write.csv(FullData, "../Datasets/Complaint_Dataset.csv")
+write.csv(megaRoster, "../Datasets/Final_Roster.csv")
+write.csv(unit_history, "../Datasets/Final_Unit_History.csv")
+write.csv(md_moreThanOne, "../Datasets/Complaints_MoreThanOneComplaint.csv")
+write.csv(offPerComp, "../Datasets/OfficersPerComplaint.csv")
+write.csv(settlements, "../Datasets/Settlements.csv")
+```

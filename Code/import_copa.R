@@ -91,10 +91,18 @@ copa_full <- rbind(copa_clear_cleaned, copa_cms_cleaned) %>%
     TRUE ~ accused_on_duty
   )) %>%
   mutate(incident_datetime = as.character(incident_datetime))%>%
-  mutate(across(-c(geometry) & where(is.character), ~ na_if(.x,"")))
+  mutate(across(-c(geometry) & where(is.character), ~ na_if(.x,""))) %>%
+  mutate(across(-c(geometry) & where(is.character), ~ na_if(.x," ")))
+
+#figure out ids of previous crews 
+bq_auth()
+#query ii data
+ii_roster_q <- "SELECT * FROM `n3-main.invis_inst.roster`"
+ii_roster <- bq_project_query("n3-main", ii_roster_q) %>% bq_table_download() %>%
+  mutate(full_name = str_to_upper(full_name))
 
 
-write.csv(copa_full,"datasets/COPA/copa_full.csv")
+write.csv(copa_full,"Datasets/COPA/copa_full.csv")
 
 
 

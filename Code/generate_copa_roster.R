@@ -14,11 +14,12 @@ copa_named <- copa_full %>%
   )) %>%
   mutate_if( is.character, na_if, "") %>%
   drop_na(accused_first_name, accused_last_name) %>%
-  mutate(full_name = ifelse(
-    !is.na(accused_middle_initial), paste(accused_first_name, accused_middle_initial,
-                                          accused_last_name, sep = " "), 
-    paste(accused_first_name, accused_last_name, sep = " ")
-  )) %>%
+  # mutate(full_name = ifelse(
+  #   !is.na(accused_middle_initial), paste(accused_first_name, accused_middle_initial,
+  #                                         accused_last_name, sep = " "), 
+  #   paste(accused_first_name, accused_last_name, sep = " ")
+  #we were generating extra ids , so full name is now just first + last
+  mutate(full_name = paste(accused_first_name, accused_last_name, sep = " ")) %>%
   mutate(full_name = str_to_upper(full_name)) %>%
   group_by(full_name) %>%
   mutate(n_distinct = n_distinct(accused_birth_year)) %>%
@@ -68,7 +69,7 @@ generate_ids <- function(dataset, name, id_index) {
 }
 
 
-test_ids <- generate_ids(copa_named, "KEVIN M CONNORS", 43)
+test_ids <- generate_ids(copa_named, "KEVIN CONNORS", 43)
 
 copa_empty <- copa_named[0,] %>%
   mutate(link_id = "")
@@ -90,4 +91,4 @@ for (full_name in unique(copa_named$full_name)) {
 copa_roster <- copa_empty %>% 
   distinct(link_id, .keep_all = TRUE) 
 
-write.csv(copa_roster, "Datasets/copa_roster.csv")
+write.csv(copa_roster, "Datasets/COPA/copa_roster.csv")
